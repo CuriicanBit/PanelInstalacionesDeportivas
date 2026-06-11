@@ -109,10 +109,10 @@ export default function TemporalTab({ records }: TemporalTabProps) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6">
         
         {/* Density Chart */}
-        <div className="bg-[#2A2A32] rounded-3xl p-6 border border-white/5 shadow-xl xl:col-span-2">
+        <div className="bg-[#2A2A32] rounded-3xl p-6 border border-white/5 shadow-xl">
           
           <div className="flex items-center justify-between mb-6">
             <div>
@@ -178,42 +178,6 @@ export default function TemporalTab({ records }: TemporalTabProps) {
                 No hay datos disponibles para graficar.
               </div>
             )}
-          </div>
-        </div>
-
-        {/* Informative advice sidebar */}
-        <div className="bg-[#2A2A32] rounded-3xl p-6 border border-white/5 shadow-xl flex flex-col justify-between">
-          <div>
-            <h3 className="text-base font-extrabold text-white tracking-tight">
-              Métricas Especiales de Saturación
-            </h3>
-            <p className="text-xs text-[#A0A0A5] mt-0.5 mb-6">
-              Diagnósticos arrojados por el motor TI
-            </p>
-          </div>
-
-          <div className="space-y-4">
-            
-            {/* Advice card 1 */}
-            <div className="p-4 rounded-2xl bg-[#1E1E24]/60 border border-white/5">
-              <span className="text-[10px] font-black tracking-widest text-[#ff4d4d] block">PICO MATUTINO</span>
-              <h4 className="text-sm font-bold text-white mt-1">12:00 a 13:00 h</h4>
-              <p className="text-xs text-zinc-405 mt-1 leading-normal text-zinc-400">
-                Concentra los mayores picos de alumnos que terminan sus bloques de cátedras matutinas.
-              </p>
-            </div>
-
-            {/* Advice card 2 */}
-            <div className="p-4 rounded-2xl bg-[#1E1E24]/60 border border-white/5">
-              <span className="text-[10px] font-black tracking-widest text-emerald-400 block">PICO TARDÍO</span>
-              <h4 className="text-sm font-bold text-white mt-1">18:00 a 19:00 h</h4>
-              <p className="text-xs text-zinc-405 mt-1 leading-normal text-zinc-400">
-                La mayor afluencia de Funcionarios se registra al terminar la jornada administrativa regional.
-              </p>
-            </div>
-
-
-
           </div>
         </div>
 
@@ -292,7 +256,7 @@ export default function TemporalTab({ records }: TemporalTabProps) {
             <div className="w-3.5 h-3.5 bg-[#D32F2F]/10 rounded" title="0-20% de carga Máxima" />
             <div className="w-3.5 h-3.5 bg-[#D32F2F]/30 rounded" title="21-45% de carga" />
             <div className="w-3.5 h-3.5 bg-[#D32F2F]/60 rounded" title="46-75% de carga" />
-            <div className="w-3.5 h-3.5 bg-[#D32F2F] rounded" title="Sobresaturado / Pico Máximo" />
+            <div className="w-3.5 h-3.5 bg-[#D32F2F] rounded" title="Sobresaturado / Horario Punta Máximo" />
             <span>Saturado</span>
           </div>
         </div>

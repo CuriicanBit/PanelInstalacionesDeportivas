@@ -1,6 +1,7 @@
 import React from 'react';
-import { Calendar, Users, BarChart3, RotateCcw } from 'lucide-react';
+import { Calendar, Users, RotateCcw } from 'lucide-react';
 import { DashboardFilters, FilterPeriod, UserType } from '../types';
+import UALogo from './UALogo';
 
 interface HeaderProps {
   filters: DashboardFilters;
@@ -81,20 +82,17 @@ export default function Header({ filters, onFilterChange, onReset, recordsCount 
       <div className="max-w-[1600px] mx-auto px-6 py-5 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-6">
         
         {/* Institutional Branding */}
-        <div className="flex items-center gap-4">
-          <div className="bg-[#D32F2F] hover:bg-[#B71C1C] transition-all h-14 w-14 flex items-center justify-center rounded-xl shadow-lg border border-[#ff5b5b]/25 transform active:scale-95 duration-150">
-            <BarChart3 className="h-7 w-7 text-white" />
+        <div className="flex flex-col sm:flex-row items-center gap-5 sm:gap-6">
+          <div className="flex-shrink-0 transform hover:scale-[1.03] transition-transform duration-200">
+            <UALogo className="h-28 w-auto drop-shadow-[0_10px_15px_rgba(211,47,47,0.15)]" />
           </div>
-          <div>
-            <div className="flex items-center gap-2.5">
-              <h1 className="text-xl md:text-2xl font-bold tracking-tight text-white">
-                UNIVERSIDAD AUTÓNOMA
-              </h1>
-              <span className="hidden leading-normal md:inline-flex items-center gap-1 bg-[#D32F2F]/20 text-[#ff4b4b] text-[10px] uppercase font-bold tracking-widest px-2.5 py-1 rounded-full border border-[#D32F2F]/50">
+          <div className="flex flex-col justify-center text-center sm:text-left h-auto sm:h-28 sm:border-l sm:border-zinc-800 sm:pl-6 gap-2">
+            <div>
+              <span className="inline-flex items-center gap-1.5 bg-[#D32F2F]/15 text-[#ff4b4b] text-[10px] sm:text-xs uppercase font-extrabold tracking-widest px-3 py-1 rounded-full border border-[#D32F2F]/40 shadow-sm leading-none">
                 Sede Talca
               </span>
             </div>
-            <p className="text-sm text-zinc-400 mt-0.5 font-medium">
+            <p className="text-xs md:text-sm text-zinc-300 font-semibold max-w-sm sm:max-w-md leading-relaxed tracking-wide">
               Desarrollado por el Departamento de Tecnologías de la Información de la UA, Sede Talca.
             </p>
           </div>

@@ -10,7 +10,8 @@ import {
   ArrowRight,
   MapPin,
   Flame,
-  ShieldCheck
+  ShieldCheck,
+  Calendar
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -45,9 +46,36 @@ export default function FacilitiesTab({ records }: FacilitiesTabProps) {
   const fFuncionarios = facilityRecords.filter(r => r.userType === 'Funcionarios').length;
   const fFamiliares = facilityRecords.filter(r => r.userType === 'Familiar de Funcionario').length;
 
-  // Average booking/workout duration
-  const totalDuration = facilityRecords.reduce((acc, curr) => acc + curr.durationMinutes, 0);
-  const avgDuration = totalVisits > 0 ? Math.round(totalDuration / totalVisits) : 0;
+  // Selected facility Peak Hour of day (hour with highest count)
+  const facHourCounts: { [key: number]: number } = {};
+  facilityRecords.forEach(r => {
+    facHourCounts[r.hour] = (facHourCounts[r.hour] || 0) + 1;
+  });
+  let facPeakHour = -1;
+  let facMaxHourCount = 0;
+  Object.entries(facHourCounts).forEach(([h, count]) => {
+    if (count > facMaxHourCount) {
+      facMaxHourCount = count;
+      facPeakHour = Number(h);
+    }
+  });
+  const facPeakHourStr = facPeakHour !== -1 ? `${String(facPeakHour).padStart(2, '0')}:00 h` : 'N/A';
+
+  // Selected facility Peak Day of week (highest count)
+  const facDayCounts: { [key: number]: number } = {};
+  facilityRecords.forEach(r => {
+    facDayCounts[r.dayOfWeek] = (facDayCounts[r.dayOfWeek] || 0) + 1;
+  });
+  let facPeakDay = -1;
+  let facMaxDayCount = 0;
+  Object.entries(facDayCounts).forEach(([d, count]) => {
+    if (count > facMaxDayCount) {
+      facMaxDayCount = count;
+      facPeakDay = Number(d);
+    }
+  });
+  const DAYS_ES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+  const facPeakDayStr = facPeakDay !== -1 ? DAYS_ES[facPeakDay] : 'N/A';
 
   // --- 1. SPECIAL BUSINESS RULE: SGM (GIMNASIO) ---
   const gymAlumnosRecords = records.filter(r => r.facility === 'Sala de Musculación' && r.subFacility === 'Alumnos');
@@ -59,14 +87,34 @@ export default function FacilitiesTab({ records }: FacilitiesTabProps) {
   const gymFamiliaresCount = gymFuncionariosRecords.filter(r => r.userType === 'Familiar de Funcionario').length;
   const gymUnifiedCount = gymAlumnosCount + gymFuncionariosCount;
 
-  // Gym average duration splits
-  const gymAlumnosAvgDuration = gymAlumnosCount > 0 
-    ? Math.round(gymAlumnosRecords.reduce((acc, c) => acc + c.durationMinutes, 0) / gymAlumnosCount) 
-    : 0;
+  // Gym peak hour splits
+  const gymAlumnosHourCounts: { [key: number]: number } = {};
+  gymAlumnosRecords.forEach(r => {
+    gymAlumnosHourCounts[r.hour] = (gymAlumnosHourCounts[r.hour] || 0) + 1;
+  });
+  let gymAlumnosPeakHour = -1;
+  let gymAlumnosMaxHourCount = 0;
+  Object.entries(gymAlumnosHourCounts).forEach(([h, count]) => {
+    if (count > gymAlumnosMaxHourCount) {
+      gymAlumnosMaxHourCount = count;
+      gymAlumnosPeakHour = Number(h);
+    }
+  });
+  const gymAlumnosPeakHourStr = gymAlumnosPeakHour !== -1 ? `${String(gymAlumnosPeakHour).padStart(2, '0')}:00 h` : 'N/A';
 
-  const gymFuncionariosAvgDuration = gymFuncionariosCount > 0 
-    ? Math.round(gymFuncionariosRecords.reduce((acc, c) => acc + c.durationMinutes, 0) / gymFuncionariosCount) 
-    : 0;
+  const gymFuncionariosHourCounts: { [key: number]: number } = {};
+  gymFuncionariosRecords.forEach(r => {
+    gymFuncionariosHourCounts[r.hour] = (gymFuncionariosHourCounts[r.hour] || 0) + 1;
+  });
+  let gymFuncionariosPeakHour = -1;
+  let gymFuncionariosMaxHourCount = 0;
+  Object.entries(gymFuncionariosHourCounts).forEach(([h, count]) => {
+    if (count > gymFuncionariosMaxHourCount) {
+      gymFuncionariosMaxHourCount = count;
+      gymFuncionariosPeakHour = Number(h);
+    }
+  });
+  const gymFuncionariosPeakHourStr = gymFuncionariosPeakHour !== -1 ? `${String(gymFuncionariosPeakHour).padStart(2, '0')}:00 h` : 'N/A';
 
   // --- 2. CAMPUS ALAMEDA SUBDIVISIONS ---
   const subAlameda1 = records.filter(r => r.facility === 'Canchas Campus Alameda' && r.subFacility === 'Cancha 1').length;
@@ -92,9 +140,9 @@ export default function FacilitiesTab({ records }: FacilitiesTabProps) {
       case 'Sala de Musculación':
         return 'Visualización calculada a partir del cruce consolidado de los registros de asistencia de alumnos y las marcaciones del personal funcionario y sus familiares.';
       case 'Cancha Campus Central':
-        return 'Visualización calculada a partir del registro de marcaciones de asistencia y la duración promedio calculada para cada bloque de uso.';
+        return 'Visualización calculada a partir del registro de marcaciones de asistencia y el análisis sistemático de afluencia horaria horaria.';
       case 'Canchas Campus Alameda':
-        return 'Visualización y métricas agregadas por sub-sector a partir de los datos registrados de reservas de canchas y duración registrada por bloque.';
+        return 'Visualización y métricas agregadas por sub-sector a partir de los datos registrados de reservas de canchas y horas críticas de afluencia.';
       default:
         return 'Distribución de accesos calculada a partir de los registros consolidados.';
     }
@@ -228,9 +276,9 @@ export default function FacilitiesTab({ records }: FacilitiesTabProps) {
                 </span>
               </div>
               <div className="bg-[#1E1E24]/60 p-4 rounded-2xl border border-white/5">
-                <span className="text-[9px] uppercase font-extrabold tracking-widest text-[#A0A0A5] block">Permanencia</span>
-                <span className="text-2xl font-black text-white mt-1 block">
-                  {avgDuration} <span className="text-xs font-bold text-zinc-400">min</span>
+                <span className="text-[9px] uppercase font-extrabold tracking-widest text-[#A0A0A5] block">Hora de Más Uso</span>
+                <span className="text-xl font-black text-white mt-1 block">
+                  {facPeakHourStr}
                 </span>
               </div>
             </div>
@@ -331,7 +379,7 @@ export default function FacilitiesTab({ records }: FacilitiesTabProps) {
                             Asistencias capturadas a través de la credencial inteligente NFC conectada a los servidores centrales de docencia y pregrado.
                           </p>
                           <div className="text-xs bg-[#D32F2F]/20 px-3.5 py-2.5 rounded-xl text-[#ff5b5b] font-semibold">
-                            Permanencia Promedio: {gymAlumnosAvgDuration} min
+                            Horario Punta de Demanda: {gymAlumnosPeakHourStr}
                           </div>
                         </motion.div>
                       )}
@@ -344,7 +392,7 @@ export default function FacilitiesTab({ records }: FacilitiesTabProps) {
                             Ingresos validados por el personal a cargo a través de marcadores biométricos UA en la recepción del gimnasio.
                           </p>
                           <div className="text-xs bg-zinc-900/60 px-3.5 py-2.5 rounded-xl text-zinc-100 font-semibold border border-white/5">
-                            Permanencia Promedio: {gymFuncionariosAvgDuration} min
+                            Horario Punta de Demanda: {gymFuncionariosPeakHourStr}
                           </div>
                         </motion.div>
                       )}
@@ -352,12 +400,7 @@ export default function FacilitiesTab({ records }: FacilitiesTabProps) {
                   </div>
                 </div>
 
-                <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-start gap-3 mt-6">
-                  <Info className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
-                  <p className="text-xs text-amber-300 leading-relaxed font-semibold">
-                    *Para justificar financiamientos estatales e institucionales de bienestar, ambos estamentos se consideran parte del KPI integrado de la Sala de Musculación. Sin embargo, puede auditar su registro segmentado usando los controles superiores.
-                  </p>
-                </div>
+
               </div>
             )}
 
@@ -379,12 +422,12 @@ export default function FacilitiesTab({ records }: FacilitiesTabProps) {
                     <div className="space-y-4">
                       <div className="p-5 rounded-3xl bg-[#1E1E24]/60 border border-white/5 relative overflow-hidden">
                         <div className="absolute right-0 top-0 translate-y-4 translate-x-4 text-zinc-800">
-                          <Sparkles className="h-28 w-28 opacity-25" />
+                          <Calendar className="h-28 w-28 opacity-25" />
                         </div>
-                        <span className="text-[10px] font-black uppercase text-zinc-500 tracking-widest">Duración Regular</span>
-                        <h4 className="text-2xl font-black text-white tracking-tight mt-1">90 min de juego</h4>
+                        <span className="text-[10px] font-black uppercase text-zinc-500 tracking-widest">Día de Mayor Uso</span>
+                        <h4 className="text-2xl font-black text-white tracking-tight mt-1">{facPeakDayStr}</h4>
                         <p className="text-xs text-zinc-400 mt-1.5 leading-relaxed">
-                          La gran mayoría de los bloques reservados corresponden a módulos fijos de 90 minutos para matches intercomités o cátedras de kinesiología.
+                          Día de la semana con mayor concentración de reservas y asistencias validadas para este recinto deportivo.
                         </p>
                       </div>
 
@@ -408,9 +451,6 @@ export default function FacilitiesTab({ records }: FacilitiesTabProps) {
                       <div className="relative">
                         <span className="text-rose-500 text-[10px] uppercase font-black tracking-widest block mb-1">MÉTRICA DESTACADA</span>
                         <h4 className="text-lg font-bold tracking-tight text-white mb-1">Carga por Temporada</h4>
-                        <p className="text-xs text-zinc-300 leading-relaxed mt-2 bg-black/10 p-2.5 rounded-xl border border-white/5">
-                          La Cancha Central posee los índices de satisfacción deportiva más altos de toda la universidad, operando a un 92% de capacidad los fines de semana.
-                        </p>
                       </div>
                       <div className="text-xs font-semibold text-zinc-450 mt-6 relative">
                         Auditoría: <span className="text-white">Asistencia UA</span>

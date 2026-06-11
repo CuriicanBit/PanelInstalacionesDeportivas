@@ -85,13 +85,33 @@ export default function OverviewTab({ records, allRecords, filters }: OverviewTa
     pctChange = totalVisits > 0 ? 100 : 0;
   }
 
-  // Calculate average duration
-  const totalDuration = records.reduce((acc, curr) => acc + curr.durationMinutes, 0);
-  const avgDuration = totalVisits > 0 ? Math.round(totalDuration / totalVisits) : 0;
+  // Calculate Peak Hour of day (hour with highest count)
+  const hourCounts: { [key: number]: number } = {};
+  records.forEach(r => {
+    hourCounts[r.hour] = (hourCounts[r.hour] || 0) + 1;
+  });
+  let peakHour = -1;
+  let maxHourCount = 0;
+  Object.entries(hourCounts).forEach(([h, count]) => {
+    if (count > maxHourCount) {
+      maxHourCount = count;
+      peakHour = Number(h);
+    }
+  });
 
-  const prevDuration = prevPeriodRecords.reduce((acc, curr) => acc + curr.durationMinutes, 0);
-  const prevAvgDuration = prevTotalVisits > 0 ? Math.round(prevDuration / prevTotalVisits) : 0;
-  const durationDiff = avgDuration - prevAvgDuration;
+  // Calculate Peak Hour for previous period
+  const prevHourCounts: { [key: number]: number } = {};
+  prevPeriodRecords.forEach(r => {
+    prevHourCounts[r.hour] = (prevHourCounts[r.hour] || 0) + 1;
+  });
+  let prevPeakHour = -1;
+  let prevMaxHourCount = 0;
+  Object.entries(prevHourCounts).forEach(([h, count]) => {
+    if (count > prevMaxHourCount) {
+      prevMaxHourCount = count;
+      prevPeakHour = Number(h);
+    }
+  });
 
   // Demography
   const alumnosCount = records.filter(r => r.userType === 'Alumnos').length;
@@ -221,36 +241,43 @@ export default function OverviewTab({ records, allRecords, filters }: OverviewTa
           </div>
         </div>
 
-        {/* KPI 2: Promedio Permanencia */}
+        {/* KPI 2: Hora de Mayor Demanda */}
         <div id="kpi-card-duration" className="bg-[#2A2A32] rounded-3xl p-6 border border-white/5 shadow-xl relative overflow-hidden flex flex-col justify-between h-[180px]">
           <div>
             <div className="flex justify-between items-start">
               <span className="text-xs uppercase font-extrabold tracking-widest text-[#A0A0A5]">
-                Promedio de Uso
+                Horario Punta
               </span>
-              <div className="p-3 rounded-2xl bg-zinc-800 text-zinc-300">
+              <div className="p-3 rounded-2xl bg-[#D32F2F]/15 text-[#ff5757]">
                 <Clock className="h-5 w-5" />
               </div>
             </div>
             <h3 className="text-4xl font-black text-white tracking-tight mt-3">
-              {avgDuration} <span className="text-xl font-bold text-zinc-500">min</span>
+              {peakHour !== -1 ? `${String(peakHour).padStart(2, '0')}:00` : '--:--'}{' '}
+              <span className="text-xl font-bold text-zinc-500">Hrs</span>
             </h3>
             <p className="text-xs text-[#A0A0A5] font-medium mt-1">
-              Tiempo promedio de permanencia
+              Bloque de mayor afluencia general
             </p>
           </div>
           <div className="flex items-center gap-2 mt-4 pt-4 border-t border-white/5">
-            {durationDiff >= 0 ? (
-              <span className="inline-flex items-center gap-1 text-[11px] font-bold bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-md border border-emerald-500/20">
-                <ArrowUpRight className="h-3 w-3 shrink-0" /> +{durationDiff} min
-              </span>
+            {peakHour !== -1 && prevPeakHour !== -1 ? (
+              peakHour === prevPeakHour ? (
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                  Sin Variación
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold bg-[#D32F2F]/10 text-rose-400 px-2 py-0.5 rounded-md border border-[#D32F2F]/20">
+                  Previo: {String(prevPeakHour).padStart(2, '0')}:00 h
+                </span>
+              )
             ) : (
-              <span className="inline-flex items-center gap-1 text-[11px] font-bold bg-rose-500/10 text-rose-400 px-2 py-0.5 rounded-md border border-rose-500/20">
-                <ArrowDownRight className="h-3 w-3 shrink-0" /> {durationDiff} min
+              <span className="inline-flex items-center gap-1 text-[11px] font-bold bg-zinc-500/10 text-zinc-400 px-2 py-0.5 rounded-md border border-zinc-500/20">
+                Sin datos previos
               </span>
             )}
             <span className="text-[10px] text-zinc-500 font-semibold tracking-wide uppercase">
-              en promedio global
+              vs período anterior
             </span>
           </div>
         </div>
