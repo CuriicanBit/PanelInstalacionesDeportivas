@@ -1,0 +1,6 @@
+{
+  "name": "Supervisión de Recintos Deportivos - Universidad Autónoma",
+  "description": "Plataforma Ejecutiva de Supervisión de Métricas y KPIs para la administración de recintos deportivos de la Universidad Autónoma.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
