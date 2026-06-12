@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { 
   Users, 
@@ -23,7 +23,7 @@ import {
   Area,
   Legend
 } from 'recharts';
-import { AttendanceRecord, DashboardFilters } from '../types';
+import { AttendanceRecord, DashboardFilters, MainFacility } from '../types';
 
 interface OverviewTabProps {
   records: AttendanceRecord[];
@@ -32,9 +32,13 @@ interface OverviewTabProps {
 }
 
 export default function OverviewTab({ records, allRecords, filters }: OverviewTabProps) {
-  
+  const [targetFacility, setTargetFacility] = useState<MainFacility | 'Todos'>('Todos');
+
+  // Filter records based on selected facility
+  const filteredRecords = records.filter(r => targetFacility === 'Todos' || r.facility === targetFacility);
+
   // Calculate total visits
-  const totalVisits = records.length;
+  const totalVisits = filteredRecords.length;
 
   // Calculate comparisons (Previous identical period)
   // Let's compute start & end range length in days
@@ -74,7 +78,9 @@ export default function OverviewTab({ records, allRecords, filters }: OverviewTa
 
   const prevPeriodRecords = allRecords.filter(r => {
     const d = r.date;
-    return d >= prevStartStr && d <= prevEndStr && (filters.userType === 'Todos' || r.userType === filters.userType);
+    return d >= prevStartStr && d <= prevEndStr && 
+           (filters.userType === 'Todos' || r.userType === filters.userType) &&
+           (targetFacility === 'Todos' || r.facility === targetFacility);
   });
 
   const prevTotalVisits = prevPeriodRecords.length;
@@ -87,7 +93,7 @@ export default function OverviewTab({ records, allRecords, filters }: OverviewTa
 
   // Calculate Peak Hour of day (hour with highest count)
   const hourCounts: { [key: number]: number } = {};
-  records.forEach(r => {
+  filteredRecords.forEach(r => {
     hourCounts[r.hour] = (hourCounts[r.hour] || 0) + 1;
   });
   let peakHour = -1;
@@ -114,31 +120,58 @@ export default function OverviewTab({ records, allRecords, filters }: OverviewTa
   });
 
   // Demography
-  const alumnosCount = records.filter(r => r.userType === 'Alumnos').length;
-  const funcionariosCount = records.filter(r => r.userType === 'Funcionarios').length;
-  const familiaresCount = records.filter(r => r.userType === 'Familiar de Funcionario').length;
+  const alumnosCount = filteredRecords.filter(r => r.userType === 'Alumnos').length;
+  const funcionariosCount = filteredRecords.filter(r => r.userType === 'Funcionarios').length;
+  const familiaresCount = filteredRecords.filter(r => r.userType === 'Familiar de Funcionario').length;
 
-  // Top Facility
-  const facilityCounts = records.reduce((acc: { [key: string]: number }, curr) => {
-    acc[curr.facility] = (acc[curr.facility] || 0) + 1;
-    return acc;
-  }, {});
-
+  // Top Facility/Sub-Facility
   let topFacility = 'N/A';
   let topCount = 0;
-  Object.entries(facilityCounts).forEach(([fac, count]) => {
-    if (count > topCount) {
-      topCount = count;
-      topFacility = fac;
-    }
-  });
+  if (targetFacility === 'Todos') {
+    const facilityCounts = filteredRecords.reduce((acc: { [key: string]: number }, curr) => {
+      acc[curr.facility] = (acc[curr.facility] || 0) + 1;
+      return acc;
+    }, {});
+    Object.entries(facilityCounts).forEach(([fac, count]) => {
+      if (count > topCount) {
+        topCount = count;
+        topFacility = fac;
+      }
+    });
+  } else {
+    const subFacilityCounts = filteredRecords.reduce((acc: { [key: string]: number }, curr) => {
+      acc[curr.subFacility] = (acc[curr.subFacility] || 0) + 1;
+      return acc;
+    }, {});
+    Object.entries(subFacilityCounts).forEach(([sub, count]) => {
+      if (count > topCount) {
+        topCount = count;
+        topFacility = sub;
+      }
+    });
+  }
 
   // Recharts: Distribution of facilities data
-  const chartFacilitiesData = [
-    { name: 'Gimnasio', Visitas: records.filter(r => r.facility === 'Sala de Musculación').length, fill: '#D32F2F' },
-    { name: 'Central', Visitas: records.filter(r => r.facility === 'Cancha Campus Central').length, fill: '#FF5722' },
-    { name: 'Alameda', Visitas: records.filter(r => r.facility === 'Canchas Campus Alameda').length, fill: '#FFC107' },
-  ];
+  const isAll = targetFacility === 'Todos';
+  const chartDataColors = ['#D32F2F', '#FF5722', '#FFC107', '#4CAF50', '#00BCD4'];
+  const chartFacilitiesData = isAll 
+    ? [
+        { name: 'Gimnasio', Visitas: filteredRecords.filter(r => r.facility === 'Sala de Musculación').length, fill: '#D32F2F' },
+        { name: 'Central', Visitas: filteredRecords.filter(r => r.facility === 'Cancha Campus Central').length, fill: '#FF5722' },
+        { name: 'Alameda', Visitas: filteredRecords.filter(r => r.facility === 'Canchas Campus Alameda').length, fill: '#FFC107' },
+      ]
+    : (() => {
+        // Group by sub-facility
+        const subMap: { [key: string]: number } = {};
+        filteredRecords.forEach(r => {
+          subMap[r.subFacility] = (subMap[r.subFacility] || 0) + 1;
+        });
+        return Object.entries(subMap).map(([name, count], index) => ({
+          name,
+          Visitas: count,
+          fill: chartDataColors[index % chartDataColors.length]
+        }));
+      })();
 
   // Recharts: Demographics Pie data
   const pieData = [
@@ -153,7 +186,7 @@ export default function OverviewTab({ records, allRecords, filters }: OverviewTa
     const timelineMap: { [key: string]: { date: string, visitas: number, timestamp: number } } = {};
     
     // Fill in last 12 chronological months if Anual, other formats if Semanal/Mensual
-    records.forEach(r => {
+    filteredRecords.forEach(r => {
       // Grouping format based on range size
       let key = r.date; // default to day
       if (diffDays > 35) {
@@ -204,6 +237,42 @@ export default function OverviewTab({ records, allRecords, filters }: OverviewTa
       transition={{ duration: 0.3 }}
       className="p-6 space-y-6 max-w-[1600px] mx-auto"
     >
+      {/* Target Facility Selector Header */}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 bg-[#1E1E24] p-5 rounded-3xl border border-white/5 text-white shadow-md">
+        <div>
+          <h2 className="text-lg font-extrabold tracking-tight flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-rose-500" />
+            Vista General de KPIs
+          </h2>
+          <p className="text-xs text-[#A0A0A5] mt-0.5">
+            Monitoreo general de afluencia y métricas clave consolidado
+          </p>
+        </div>
+
+        {/* Facility Selector Filters */}
+        <div className="flex bg-zinc-950 p-1 rounded-2xl border border-white/5 self-start lg:self-center">
+          {([
+            { id: 'Todos', label: 'Consolidado General' },
+            { id: 'Sala de Musculación', label: 'Gimnasio' },
+            { id: 'Cancha Campus Central', label: 'Cancha Central' },
+            { id: 'Canchas Campus Alameda', label: 'Canchas Alameda' }
+          ] as const).map((fac) => (
+            <button
+              id={`btn-overview-facility-${fac.id.replace(/ /g, '-')}`}
+              key={fac.id}
+              onClick={() => setTargetFacility(fac.id)}
+              className={`px-3.5 py-2 rounded-xl text-xs font-semibold cursor-pointer transition-all duration-150 transform active:scale-95 ${
+                targetFacility === fac.id
+                  ? 'bg-[#D32F2F] text-white shadow-md'
+                  : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
+              }`}
+            >
+              {fac.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* 3 Executive High Contrast KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         
@@ -287,7 +356,7 @@ export default function OverviewTab({ records, allRecords, filters }: OverviewTa
           <div>
             <div className="flex justify-between items-start">
               <span className="text-xs uppercase font-extrabold tracking-widest text-[#A0A0A5]">
-                Sector Más Demandado
+                {targetFacility === 'Todos' ? 'Sector Más Demandado' : 'Sub-Sector Más Demandado'}
               </span>
               <div className="p-3 rounded-2xl bg-[#D32F2F]/15 text-[#ff5757]">
                 <Users className="h-5 w-5" />
@@ -297,7 +366,7 @@ export default function OverviewTab({ records, allRecords, filters }: OverviewTa
               {topFacility}
             </h3>
             <p className="text-xs text-[#A0A0A5] font-medium mt-1">
-              Concentra la mayor afluencia
+              {targetFacility === 'Todos' ? 'Concentra la mayor afluencia' : 'Sub-sala o cancha más solicitada'}
             </p>
           </div>
           <div className="flex items-center gap-2 mt-4 pt-4 border-t border-white/5">
@@ -414,7 +483,7 @@ export default function OverviewTab({ records, allRecords, filters }: OverviewTa
               <div className="text-[#A0A0A5] text-sm">Sin datos demográficos</div>
             )}
             <div className="absolute flex flex-col items-center justify-center">
-              <span className="text-xs text-[#A0A0A5] font-bold uppercase tracking-widest">Global</span>
+              <span className="text-xs text-[#A0A0A5] font-bold uppercase tracking-widest">{targetFacility === 'Todos' ? 'Global' : 'Sector'}</span>
               <span className="text-2xl font-black text-white">{totalVisits.toLocaleString('es-CL')}</span>
             </div>
           </div>
@@ -447,10 +516,14 @@ export default function OverviewTab({ records, allRecords, filters }: OverviewTa
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
           <div>
             <h2 className="text-lg font-extrabold text-white tracking-tight">
-              Carga Comparativa por Instalación Central
+              {targetFacility === 'Todos' 
+                ? 'Carga Comparativa por Instalación Central' 
+                : `Carga Interna: ${targetFacility}`}
             </h2>
             <p className="text-xs text-[#A0A0A5] mt-0.5">
-              Volumen global de accesos y reservas cruzadas
+              {targetFacility === 'Todos' 
+                ? 'Volumen global de accesos y reservas cruzadas' 
+                : 'Distribución de accesos por sub-sala o tipo de uso'}
             </p>
           </div>
           <div className="flex bg-zinc-950 p-1 rounded-xl self-start border border-white/5">

@@ -144,6 +144,29 @@ export default function TemporalTab({ records }: TemporalTabProps) {
                     fontSize={11} 
                     tickLine={false} 
                     axisLine={false} 
+                    tick={(props: any) => {
+                      const { x, y, payload } = props;
+                      if (!payload) return null;
+                      const hourVal = parseInt(payload.value.split(':')[0], 10);
+                      const isMorning = hourVal >= 8 && hourVal <= 14;
+                      const isAfternoonNight = hourVal >= 15 && hourVal <= 22;
+                      const color = isMorning ? '#38bdf8' : (isAfternoonNight ? '#fb923c' : '#A0A0A5');
+                      return (
+                        <g transform={`translate(${x},${y})`}>
+                          <text
+                            x={0}
+                            y={0}
+                            dy={14}
+                            textAnchor="middle"
+                            fill={color}
+                            fontSize={11}
+                            fontWeight="bold"
+                          >
+                            {payload.value}
+                          </text>
+                        </g>
+                      );
+                    }}
                   />
                   <YAxis 
                     stroke="#A0A0A5" 
@@ -161,12 +184,20 @@ export default function TemporalTab({ records }: TemporalTabProps) {
                     barSize={28}
                   >
                     {hourlyData.map((entry, index) => {
-                      // Coloring: Peak hours get institutional UA Red, normal gets dark grey/zinc
-                      const isPeak = entry.hour === 12 || entry.hour === 18 || entry.hour === 19;
+                      // Coloring: Dynamic color degradation from UA Red (#D32F2F) for maximum value to neutral gray (#5a5a66) for minimum
+                      const maxAsistencias = Math.max(...hourlyData.map(h => h.Asistencias));
+                      const ratio = maxAsistencias > 0 ? (entry.Asistencias / maxAsistencias) : 0;
+                      // Linearly interpolate between #5a5a66 (gray-zinc) and #D32F2F (red-UA)
+                      // #5a5a66 -> RGB(90, 90, 102)
+                      // #D32F2F -> RGB(211, 47, 47)
+                      const r = Math.round(90 + (211 - 90) * ratio);
+                      const g = Math.round(90 + (47 - 90) * ratio);
+                      const b = Math.round(102 + (47 - 102) * ratio);
+                      const cellColor = `rgb(${r}, ${g}, ${b})`;
                       return (
                         <Cell 
                            key={`cell-${index}`} 
-                           fill={isPeak ? '#D32F2F' : '#5a5a66'} 
+                           fill={cellColor} 
                         />
                       );
                     })}

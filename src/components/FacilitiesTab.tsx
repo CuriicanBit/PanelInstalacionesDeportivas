@@ -138,11 +138,11 @@ export default function FacilitiesTab({ records }: FacilitiesTabProps) {
   const getFacilityDescription = () => {
     switch (selectedFacility) {
       case 'Sala de Musculación':
-        return 'Visualización calculada a partir del cruce consolidado de los registros de asistencia de alumnos y las marcaciones del personal funcionario y sus familiares.';
+        return 'Visualización consolidada en tiempo real a partir de los datos unificados del gimnasio (alumnos y personal dependiente).';
       case 'Cancha Campus Central':
-        return 'Visualización calculada a partir del registro de marcaciones de asistencia y el análisis sistemático de afluencia horaria horaria.';
+        return 'Métricas operativas procesadas y actualizadas de forma automatizada mediante la lectura del repositorio de asistencias.';
       case 'Canchas Campus Alameda':
-        return 'Visualización y métricas agregadas por sub-sector a partir de los datos registrados de reservas de canchas y horas críticas de afluencia.';
+        return 'Desglose dinámico de reservas agregadas por sub-sectores y canchas, útil para la toma de decisiones espaciales.';
       default:
         return 'Distribución de accesos calculada a partir de los registros consolidados.';
     }
@@ -373,10 +373,10 @@ export default function FacilitiesTab({ records }: FacilitiesTabProps) {
 
                       {gymDrilldown === 'Alumnos' && (
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-5 rounded-2xl bg-[#D32F2F]/10 border border-[#D32F2F]/20 space-y-3">
-                          <span className="text-[10px] uppercase font-extrabold text-rose-400 tracking-widest block">Torniquete Estudiantes</span>
+                          <span className="text-[10px] uppercase font-extrabold text-rose-400 tracking-widest block">Sincronización de Estudiantes</span>
                           <h4 className="text-2xl font-black text-white tracking-tight">{gymAlumnosCount.toLocaleString('es-CL')} Ingresos</h4>
                           <p className="text-xs text-zinc-300 leading-normal">
-                            Asistencias capturadas a través de la credencial inteligente NFC conectada a los servidores centrales de docencia y pregrado.
+                            Asistencias obtenidas a través de la integración en vivo con la planilla Google Sheets publicada en formato CSV. Los registros cuentan con un tiempo de desfase máximo de 5 minutos, correspondiente al intervalo de propagación de datos y actualización en la nube de Google.
                           </p>
                           <div className="text-xs bg-[#D32F2F]/20 px-3.5 py-2.5 rounded-xl text-[#ff5b5b] font-semibold">
                             Horario Punta de Demanda: {gymAlumnosPeakHourStr}
@@ -386,10 +386,10 @@ export default function FacilitiesTab({ records }: FacilitiesTabProps) {
 
                       {gymDrilldown === 'Funcionarios' && (
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-5 rounded-2xl bg-zinc-950/60 text-zinc-100 border border-white/5 space-y-3">
-                          <span className="text-[10px] uppercase font-extrabold text-rose-500 tracking-widest block">Portal de Funcionarios / Staff</span>
+                          <span className="text-[10px] uppercase font-extrabold text-rose-500 tracking-widest block">Sincronización Personal / Staff</span>
                           <h4 className="text-2xl font-black text-white tracking-tight">{gymFuncionariosCount.toLocaleString('es-CL')} Registros</h4>
                           <p className="text-xs text-zinc-400 leading-normal">
-                            Ingresos validados por el personal a cargo a través de marcadores biométricos UA en la recepción del gimnasio.
+                            Marcaciones recuperadas mediante actualización programada desde el feed web CSV de Google Sheets. Gracias a esta arquitectura cloud, el desfase entre las asistencias tomadas físicamente y su integración en este panel está garantizado por debajo de los 5 minutos sin requerir sistemas intermediarios.
                           </p>
                           <div className="text-xs bg-zinc-900/60 px-3.5 py-2.5 rounded-xl text-zinc-100 font-semibold border border-white/5">
                             Horario Punta de Demanda: {gymFuncionariosPeakHourStr}
@@ -400,7 +400,12 @@ export default function FacilitiesTab({ records }: FacilitiesTabProps) {
                   </div>
                 </div>
 
-
+                <div className="p-4 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-start gap-3 mt-6">
+                  <span className="bg-[#D32F2F] text-white text-[9px] uppercase font-extrabold px-1.5 py-0.5 rounded shrink-0 mt-0.5">Nota</span>
+                  <p className="text-xs text-orange-300 leading-relaxed font-semibold">
+                    Los accesos consolidados de la Sala de Musculación se extraen periódicamente desde la base de datos distribuida en Google Sheets (origen CSV). El sistema unifica de forma autónoma los registros de alumnos y personal funcionario en la nube, con un desfase máximo garantizado de 5 minutos.
+                  </p>
+                </div>
               </div>
             )}
 
@@ -431,38 +436,92 @@ export default function FacilitiesTab({ records }: FacilitiesTabProps) {
                         </p>
                       </div>
 
-                      <div className="p-5 rounded-3xl bg-[#1E1E24]/60 border border-white/5">
-                        <span className="text-[10px] font-black uppercase text-zinc-550 tracking-widest block mb-2">Comportamiento Demográfico</span>
-                        <div className="flex justify-between items-center text-xs">
-                          <span className="font-semibold text-zinc-400">Alumnos</span>
-                          <span className="font-black text-white">{((fAlumnos / (totalVisits || 1)) * 100).toFixed(0)}%</span>
-                        </div>
-                        <div className="w-full bg-[#1E1E24] h-1.5 rounded-full mt-1.5 relative overflow-hidden">
-                          <div className="bg-[#D32F2F] h-full" style={{ width: `${(fAlumnos / (totalVisits || 1)) * 100}%` }} />
+                      <div className="p-5 rounded-3xl bg-[#1E1E24]/60 border border-white/5 space-y-3">
+                        <span className="text-[10px] font-black uppercase text-zinc-400 tracking-widest block">Comportamiento Demográfico</span>
+                        
+                        <div className="space-y-2.5">
+                          {/* Alumnos */}
+                          <div>
+                            <div className="flex justify-between items-center text-xs">
+                              <span className="font-semibold text-zinc-400">Alumnos</span>
+                              <span className="font-black text-white">{((fAlumnos / (totalVisits || 1)) * 100).toFixed(0)}%</span>
+                            </div>
+                            <div className="w-full bg-zinc-950/40 h-1.5 rounded-full mt-1 relative overflow-hidden">
+                              <div className="bg-[#D32F2F] h-full transition-all duration-300" style={{ width: `${(fAlumnos / (totalVisits || 1)) * 100}%` }} />
+                            </div>
+                          </div>
+
+                          {/* Funcionarios */}
+                          <div>
+                            <div className="flex justify-between items-center text-xs">
+                              <span className="font-semibold text-zinc-400">Funcionarios</span>
+                              <span className="font-black text-white">{((fFuncionarios / (totalVisits || 1)) * 100).toFixed(0)}%</span>
+                            </div>
+                            <div className="w-full bg-zinc-950/40 h-1.5 rounded-full mt-1 relative overflow-hidden">
+                              <div className="bg-orange-500 h-full transition-all duration-300" style={{ width: `${(fFuncionarios / (totalVisits || 1)) * 100}%` }} />
+                            </div>
+                          </div>
+
+                          {/* Familiares */}
+                          <div>
+                            <div className="flex justify-between items-center text-xs">
+                              <span className="font-semibold text-zinc-400">Familiares</span>
+                              <span className="font-black text-white">{((fFamiliares / (totalVisits || 1)) * 100).toFixed(0)}%</span>
+                            </div>
+                            <div className="w-full bg-zinc-950/40 h-1.5 rounded-full mt-1 relative overflow-hidden">
+                              <div className="bg-teal-500 h-full transition-all duration-300" style={{ width: `${(fFamiliares / (totalVisits || 1)) * 100}%` }} />
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
 
                     {/* Right summary info */}
-                    <div className="p-6 bg-zinc-950/40 text-zinc-100 rounded-3xl border border-white/5 flex flex-col justify-between relative overflow-hidden">
-                      <div className="absolute right-0 bottom-0 text-zinc-805 translate-x-4 translate-y-4 opacity-30">
-                        <Flame className="h-32 w-32 animate-pulse" />
+                    <div className="p-6 bg-[#16161B] text-zinc-100 rounded-3xl border border-white/5 flex flex-col justify-between relative overflow-hidden h-full min-h-[196px]">
+                      <div className="absolute right-0 bottom-0 text-zinc-800/10 translate-x-4 translate-y-4 pointer-events-none">
+                        <Flame className="h-28 w-28 text-orange-500 opacity-20 animate-pulse" />
                       </div>
+                      
                       <div className="relative">
                         <span className="text-rose-500 text-[10px] uppercase font-black tracking-widest block mb-1">MÉTRICA DESTACADA</span>
                         <h4 className="text-lg font-bold tracking-tight text-white mb-1">Carga por Temporada</h4>
+                        
+                        <div className="mt-4 space-y-3">
+                          <div>
+                            <div className="flex justify-between text-xs mb-1">
+                              <span className="text-zinc-400">Nivel de Carga:</span>
+                              <span className={`font-black ${totalVisits > 50 ? 'text-red-400' : totalVisits > 15 ? 'text-amber-400' : 'text-teal-400'}`}>
+                                {totalVisits > 50 ? 'Alta' : totalVisits > 15 ? 'Moderada' : 'Baja'} ({totalVisits} usos)
+                              </span>
+                            </div>
+                            <div className="w-full bg-zinc-900 h-1.5 rounded-full overflow-hidden">
+                              <div 
+                                className={`h-full transition-all duration-500 ${totalVisits > 50 ? 'bg-red-500' : totalVisits > 15 ? 'bg-amber-500' : 'bg-teal-500'}`}
+                                style={{ width: `${Math.min(100, Math.max(5, (totalVisits / 80) * 100))}%` }} 
+                              />
+                            </div>
+                          </div>
+
+                          <div className="flex justify-between items-center text-xs">
+                            <span className="text-zinc-400">Hora de Mayor Demanda:</span>
+                            <span className="font-extrabold text-white bg-zinc-900 px-2 py-0.5 rounded border border-white/5">
+                              {facPeakHourStr}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-xs font-semibold text-zinc-450 mt-6 relative">
-                        Auditoría: <span className="text-white">Asistencia UA</span>
+
+                      <div className="text-[10px] text-zinc-500 leading-normal mt-4 border-t border-white/5 pt-3 pr-2">
+                        Esta métrica consolida el total de {totalVisits} registros de la planilla. Si ve una carga baja, es debido a la cantidad actual de reservas en su planilla base de Google Sheets.
                       </div>
                     </div>
                   </div>
                 </div>
 
                 <div className="p-4 rounded-xl bg-teal-500/10 border border-teal-500/20 flex items-start gap-3 mt-6">
-                  <span className="bg-teal-600 text-white text-[9px] uppercase font-extrabold px-1.5 py-0.5 rounded shrink-0 mt-0.5">Sello</span>
+                  <span className="bg-[#D32F2F] text-white text-[9px] uppercase font-extrabold px-1.5 py-0.5 rounded shrink-0 mt-0.5">Nota</span>
                   <p className="text-xs text-teal-300 leading-relaxed font-semibold">
-                    Esta cancha cuenta con certificación de mantenimiento semestral, lo que reduce el factor de riesgo por lesiones en un 33% comparado al césped convencional.
+                    Las métricas de carga del Campus Central se sincronizan mediante la planilla de Google Sheets (formato CSV) procesada en la nube. Esta sincronización directa garantiza que la afluencia de reservas y asistencias físicas registradas se refleje en este panel con un desfase máximo de 5 minutos.
                   </p>
                 </div>
               </div>
@@ -528,7 +587,7 @@ export default function FacilitiesTab({ records }: FacilitiesTabProps) {
                 <div className="p-4 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-start gap-3 mt-6">
                   <span className="bg-[#D32F2F] text-white text-[9px] uppercase font-extrabold px-1.5 py-0.5 rounded shrink-0 mt-0.5">Nota</span>
                   <p className="text-xs text-orange-300 leading-relaxed font-semibold">
-                    Las tres sub-instalaciones operan en el Campus Alameda. La Multicancha está equipada adicionalmente para básquetbol federativo y voleibol de liga regional.
+                    Los datos de Campus Alameda se obtienen directamente mediante la sincronización automática de la planilla Google Sheets publicada en formato CSV. El desfase de actualización de estos registros físicos a nivel cloud es de un máximo de 5 minutos, garantizando un flujo constante sin intermediarios.
                   </p>
                 </div>
               </div>

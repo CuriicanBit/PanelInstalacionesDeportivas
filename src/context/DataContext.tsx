@@ -686,10 +686,20 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const dayOfWeek = isNaN(dObj.getDay()) ? 1 : dObj.getDay();
             const { hour, durationMinutes } = extractHourAndDuration(row, '', 'Bloque Reservado');
 
-            // Balance subFacilities realistically if no explicit name inside columns
-            const idStr = getRowValue(row, 'Id inicio') || '';
-            const num = parseInt(idStr.replace(/\D/g, '')) || idx;
-            const subCourt = num % 3 === 0 ? 'Multicancha' : (num % 3 === 1 ? 'Cancha 1' : 'Cancha 2');
+            // Extract the court from column "Instalación Reservada" if available, else fall back to balanced index
+            const rawInst = getRowValue(row, 'Instalación Reservada').trim();
+            let subCourt: SubFacility = 'Cancha 1';
+            if (rawInst.toLowerCase().includes('cancha 1')) {
+              subCourt = 'Cancha 1';
+            } else if (rawInst.toLowerCase().includes('cancha 2')) {
+              subCourt = 'Cancha 2';
+            } else if (rawInst.toLowerCase().includes('multicancha')) {
+              subCourt = 'Multicancha';
+            } else {
+              const idStr = getRowValue(row, 'Id inicio') || '';
+              const num = parseInt(idStr.replace(/\D/g, '')) || idx;
+              subCourt = num % 3 === 0 ? 'Multicancha' : (num % 3 === 1 ? 'Cancha 1' : 'Cancha 2');
+            }
 
             return {
               id: `CA-${getRowValue(row, 'Id inicio') || idx}`,
